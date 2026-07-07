@@ -9,9 +9,11 @@ import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { EIssuesStoreType, TIssue, TIssueGroupByOptions, TIssueOrderByOptions } from "@plane/types";
 import type { GroupDropLocation } from "@/components/issues/issue-layouts/utils";
 import { handleGroupDragDrop } from "@/components/issues/issue-layouts/utils";
+import { canTransitionIssueState } from "@/helpers/state-transition";
 import { ISSUE_FILTER_DEFAULT_DATA } from "@/store/issue/helpers/base-issues.store";
 import { useIssueDetail } from "./store/use-issue-detail";
 import { useIssues } from "./store/use-issues";
+import { useProjectState } from "./store/use-project-state";
 import { useIssuesActions } from "./use-issues-actions";
 
 type DNDStoreType =
@@ -38,6 +40,7 @@ export const useGroupIssuesDragNDrop = (
   const {
     issue: { getIssueById },
   } = useIssueDetail();
+  const { getStateById } = useProjectState();
   const { updateIssue } = useIssuesActions(storeType);
   const {
     issues: { getIssueIds, addCycleToIssue, removeCycleFromIssue, changeModulesInIssue },
@@ -71,6 +74,18 @@ export const useGroupIssuesDragNDrop = (
 
     const isModuleChanged = Object.keys(data).includes(moduleKey);
     const isCycleChanged = Object.keys(data).includes(cycleKey);
+
+    if (Object.keys(data).includes("state_id")) {
+      const currentIssue = getIssueById(issueId);
+      if (
+        !canTransitionIssueState({
+          targetStateId: data.state_id,
+          assigneeIds: currentIssue?.assignee_ids,
+          getStateById,
+        })
+      )
+        return;
+    }
 
     if (isCycleChanged && workspaceSlug) {
       if (data[cycleKey]) {

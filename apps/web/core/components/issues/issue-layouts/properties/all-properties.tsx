@@ -42,6 +42,8 @@ import { useProjectState } from "@/hooks/store/use-project-state";
 import { useAppRouter } from "@/hooks/use-app-router";
 import { useIssueStoreType } from "@/hooks/use-issue-layout-store";
 import { usePlatformOS } from "@/hooks/use-platform-os";
+// helpers
+import { canTransitionIssueState } from "@/helpers/state-transition";
 // plane web components
 import { WorkItemLayoutAdditionalProperties } from "@/plane-web/components/issues/issue-layouts/additional-properties";
 // local components
@@ -108,6 +110,7 @@ export const IssueProperties = observer(function IssueProperties(props: IIssuePr
   );
 
   const handleState = async (stateId: string) => {
+    if (!canTransitionIssueState({ targetStateId: stateId, assigneeIds: issue.assignee_ids, getStateById })) return;
     if (updateIssue) await updateIssue(issue.project_id, issue.id, { state_id: stateId });
   };
 

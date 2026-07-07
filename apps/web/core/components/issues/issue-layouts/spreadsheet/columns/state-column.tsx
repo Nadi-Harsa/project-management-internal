@@ -10,6 +10,10 @@ import { observer } from "mobx-react";
 import type { TIssue } from "@plane/types";
 // components
 import { StateDropdown } from "@/components/dropdowns/state/dropdown";
+// helpers
+import { canTransitionIssueState } from "@/helpers/state-transition";
+// hooks
+import { useProjectState } from "@/hooks/store/use-project-state";
 
 type Props = {
   issue: TIssue;
@@ -20,13 +24,17 @@ type Props = {
 
 export const SpreadsheetStateColumn = observer(function SpreadsheetStateColumn(props: Props) {
   const { issue, onChange, disabled, onClose } = props;
+  const { getStateById } = useProjectState();
 
   return (
     <div className="h-11 border-b-[0.5px] border-subtle">
       <StateDropdown
         projectId={issue.project_id ?? undefined}
         value={issue.state_id}
-        onChange={(data) => onChange(issue, { state_id: data }, { changed_property: "state", change_details: data })}
+        onChange={(data) => {
+          if (!canTransitionIssueState({ targetStateId: data, assigneeIds: issue.assignee_ids, getStateById })) return;
+          onChange(issue, { state_id: data }, { changed_property: "state", change_details: data });
+        }}
         disabled={disabled}
         buttonVariant="transparent-with-text"
         buttonClassName="text-left rounded-none group-[.selected-issue-row]:bg-accent-primary/5 group-[.selected-issue-row]:hover:bg-accent-primary/10 px-page-x"
